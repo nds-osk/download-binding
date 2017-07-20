@@ -24,7 +24,7 @@ This document provides the following details of download binding:
 
 This is a binding for a binder included in AGL.(*1)
 
-![Figure: component](/docs/pictures/component.png)
+![Figure: component](pictures/component.png)
 
 This binding is dynamically loaded libraries in the binder process.
 
@@ -71,7 +71,7 @@ The AGL application can:
 Optionally:
 - a download speed is able to limit.
 
-![Figure: usecase - control](/docs/pictures/uc_download.png)
+![Figure: usecase - control](pictures/uc_download.png)
 
 
 ## 3-2. Use the downloaded file
@@ -82,7 +82,7 @@ If the used file is unnecessary, it can be deleated.
 
 ex) The AGL application downloads an AGL application(.wgt), and installs it in the AGL using the binding that installs a widget file.
 
-![Figure: usecase - use file](/docs/pictures/uc_use_file.png)
+![Figure: usecase - use file](pictures/uc_use_file.png)
 
 ## 3-3. Encrypt or Decrypt the downloaded file
 
@@ -90,7 +90,7 @@ The AGL application can encrypt the downloaded file, and decrypt the encrypted f
 
 Only when the AGL application encrypting or decrypting the file, it needs to send a key(a common key). 
 
-![Figure: usecase - use file](/docs/pictures/uc_encrypt.png)
+![Figure: usecase - use file](pictures/uc_encrypt.png)
 
 
 # 4. API Specification
