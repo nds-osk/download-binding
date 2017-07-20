@@ -95,12 +95,15 @@ ex) The AGL application downloads an AGL application(.wgt), and installs it in t
 
 ## 3-3. Encrypt or Decrypt the downloaded file
 
-The AGL application can encrypt the downloaded file, and decrypt the encrypted file.
+The AGL application can decrypt the downloaded encrypted file.
 
-Only when the AGL application encrypting or decrypting the file, it needs to send a key(a common key). 
+However, it is a precondition that the public key is exchanged with the cloud server in advance.
 
-![Figure: usecase - use file](pictures/uc_encrypt.png)
+![Figure: usecase - decrypt](pictures/uc_decrypt.png)
 
+| Use Case                    | How to implement the use case for the Application |
+|-----------------------------|---------------------------------------------------|
+| decrypt file                | call download/decrypt                             |
 
 # 4. API Specification
 
@@ -123,4 +126,4 @@ and contains the following verbs:
 | resume      | resume to download                                             |
 | cancel      | cancel to download                                             |
 | delete      | delete the downloaded file                                     |
-| encrypt     | encrypt or decrypt the downloaded file                         |
+| decrypt     | decrypt the downloaded encrypted file                          |
