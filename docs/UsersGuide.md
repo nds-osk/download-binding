@@ -32,17 +32,7 @@ This binding provides an API to download files.
 
 *1) http://docs.automotivelinux.org/docs/apis_services/en/dev/reference/af-binder/afb-overview.html
 
-
-## 2.2. Terget
-
-This binding supports the following AGL version:
-
-- Charming Chinook
-
-Please refer to ReleaseNotes.md for the tested devices.
-
-
-## 2.3. Feature
+## 2.2. Feature
 
 This binding:
 - downloads files in parallel.
