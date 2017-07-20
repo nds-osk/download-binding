@@ -63,6 +63,17 @@ Optionally:
 
 ![Figure: usecase - control](pictures/uc_download.png)
 
+| Use Case              | How to implement the use case for the Application       |
+|-----------------------|---------------------------------------------------------|
+| start to download     | call download/download                                  |
+| download in parallel  | call download/download during other download            |
+| limit download speed  | call download/download with the option parameter        |
+| get download id       | call download/info                                      |
+| control to download   | call download/stop or resume or cancel                  |
+| stop to download      | call download/stop                                      |
+| resume to download    | call download/resume                                    |
+| cancel to download    | call download/cancel                                    |
+
 
 ## 3-2. Use the downloaded file
 
@@ -73,6 +84,14 @@ If the used file is unnecessary, it can be deleated.
 ex) The AGL application downloads an AGL application(.wgt), and installs it in the AGL using the binding that installs a widget file.
 
 ![Figure: usecase - use file](pictures/uc_use_file.png)
+
+| Use Case                    | How to implement the use case for the Application |
+|-----------------------------|---------------------------------------------------|
+| get download progress       | call download/info                                |
+| check download is completed | check the download progress is 100%               |
+| get file name               | call download/info                                |
+| delete file                 | call download/delete                              |
+| use file                    | call other API with the file name as a parameter  |
 
 ## 3-3. Encrypt or Decrypt the downloaded file
 
