@@ -43,7 +43,7 @@ This binding:
 
 (The following functions supported only in commercial version.)
 - limits download speed.
-- encrypts a downloaded file.
+- decrypts a downloaded file.
 
 
 # 3. Use Cases
@@ -93,7 +93,7 @@ ex) The AGL application downloads an AGL application(.wgt), and installs it in t
 | delete file                 | call download/delete                              |
 | use file                    | call other API with the file name as a parameter  |
 
-## 3-3. Encrypt or Decrypt the downloaded file
+## 3-3. Decrypt the downloaded file
 
 The AGL application can decrypt the downloaded encrypted file.
 
