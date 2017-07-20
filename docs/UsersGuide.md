@@ -105,15 +105,3 @@ and contains the following verbs:
 | cancel      | cancel to download                                             |
 | delete      | delete the downloaded file                                     |
 | encrypt     | encrypt or decrypt the downloaded file                         |
-
-
-# 5. Notices
-
-None
-
-# 6. Restrictions
-
-None
-
-
-
