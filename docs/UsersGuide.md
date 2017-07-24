@@ -130,6 +130,45 @@ and contains the following verbs:
 
 ## Download API
 
+These are the download API Verbs specification.
+
+The following is a description of each item:
+
+- Resource URL
+
+  This is URL for calling the verb.
+
+- Session Constant
+
+  This is ["authorisation and session requirements of the method"](https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-framework-binder.git;a=blob;f=doc/afb-bindings-writing.md;h=6327734efab9019e047c7999003a9abbb2eeae6f;hb=refs/heads/chinook).
+
+- Parameters
+
+  These are parameters with calling the verb.
+
+- Responses
+    - Sucsess
+
+      This is a response that will be returned when the verb succeeds.
+      This is the response object included in the [afb-reply](https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-framework-binder.git;a=blob;f=doc/afb-application-writing.md;h=14199f62c5f0778c128d67595b117032e3a7291d;hb=refs/heads/chinook),
+when request.status is "sucsess".
+
+    - Failure
+
+      This is a response that will be returned when the verb fails.
+      This is the request.info message included in the [afb-reply](https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-framework-binder.git;a=blob;f=doc/afb-application-writing.md;h=14199f62c5f0778c128d67595b117032e3a7291d;hb=refs/heads/chinook),
+when request.status is "failed".
+
+- Example Request
+
+  This is a request example.
+
+- Example Response
+
+  This is a response example.
+
+
+
 ### download/download
 
 Download a file from the cloud server.
@@ -140,7 +179,7 @@ http://$BOARDIP:$PORT/download/download
 
 #### Session Constant
 
-[AFB_SESSION_CHECK](https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-framework-binder.git;a=blob;f=doc/afb-bindings-writing.md;h=6327734efab9019e047c7999003a9abbb2eeae6f;hb=refs/heads/chinook)
+AFB_SESSION_CHECK
 
 #### Parameters
 
@@ -160,17 +199,11 @@ http://$BOARDIP:$PORT/download/download
 
 ##### Sucsess
 
-The following responses are response object included in the [afb-reply](https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-framework-binder.git;a=blob;f=doc/afb-application-writing.md;h=14199f62c5f0778c128d67595b117032e3a7291d;hb=refs/heads/chinook),
-when request.status is "sucsess".
-
 | Name        | Type     | Description                            |
 |-------------|----------|----------------------------------------|
 | id          | number   | the ID of the download                 |
 
 ##### Failure
-
-The following responses are request.info message included in the [afb-reply](https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-framework-binder.git;a=blob;f=doc/afb-application-writing.md;h=14199f62c5f0778c128d67595b117032e3a7291d;hb=refs/heads/chinook),
-when request.status is "failed".
 
 | Message                          |
 |----------------------------------|
