@@ -18,6 +18,7 @@
         - [download/download](#downloaddownload)
         - [download/info](#downloadinfo)
         - [download/stop](#downloadstop)
+        - [download/resume](#downloadresume)
 
 # 1. Introduction
 
@@ -80,9 +81,9 @@ Optionally:
 | download in parallel  | call [download/download](#downloaddownload) during other download             |
 | limit download speed  | call [download/download](#downloaddownload) with the option parameter         |
 | get download id       | call [download/info](#downloadinfo)                                           |
-| control to download   | call [download/stop](#downloadstop) or resume or cancel                       |
+| control to download   | call [download/stop](#downloadstop) or [resume](#downloadresume) or cancel    |
 | stop to download      | call [download/stop](#downloadstop)                                           |
-| resume to download    | call download/resume                                                          |
+| resume to download    | call [download/resume](#downloadresume)                                       |
 | cancel to download    | call download/cancel                                                          |
 
 
@@ -136,7 +137,7 @@ and contains the following verbs:
 | [download](#downloaddownload)     | download a file                                                |
 | [info](#downloadinfo)             | get download information                                       |
 | [stop](#downloadstop)             | stop to download                                               |
-| resume                            | resume to download                                             |
+| [resume](#downloadresume)         | resume to download                                             |
 | cancel                            | cancel to download                                             |
 | delete                            | delete the downloaded file                                     |
 | decrypt                           | decrypt the downloaded encrypted file                          |
@@ -498,6 +499,70 @@ UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
 TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
 curl http://$BOARDIP:$PORT/download/stop?uuid=$UUID\&token=$TOKEN\&id=507
 ```
+
+#### *Example Response*
+
+```
+{
+  "jtype": "afb-reply",
+  "request": {
+    "status": "success"
+  }
+}
+```
+
+
+---
+
+
+### download/resume
+
+Resume to download.
+
+#### *Resource URL*
+
+http://$BOARDIP:$PORT/download/resume
+
+#### *Session Constant*
+
+AFB_SESSION_CHECK
+
+#### *Parameters*
+
+| Name        | Required | Type     | Description                            | Default Value |
+|-------------|----------|----------|----------------------------------------|---------------|
+| id          | required | number   | the ID of the download                 | none          |
+
+| Name        | Validation                                 |
+|-------------|--------------------------------------------|
+| id          | range: 0 - 999                             |
+
+
+#### *Responses*
+
+- Sucsess
+
+None.
+
+
+- Failure
+
+| Message                          |
+|----------------------------------|
+| id is invalid value              |
+| must call when state is 0:pause  |
+
+
+#### *Example Request*
+
+```
+BOARDIP="192.168.x.x"
+PORT=1234
+UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
+TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
+curl http://$BOARDIP:$PORT/download/resume?uuid=$UUID\&token=$TOKEN\&id=507
+```
+
 
 #### *Example Response*
 
