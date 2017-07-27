@@ -19,6 +19,7 @@
         - [download/info](#downloadinfo)
         - [download/stop](#downloadstop)
         - [download/resume](#downloadresume)
+        - [download/cancel](#downloadcancel)
 
 # 1. Introduction
 
@@ -75,16 +76,16 @@ Optionally:
 
 ![Figure: usecase - control](pictures/uc_download.png)
 
-| Use Case              | How to implement the use case for the Application                             |
-|-----------------------|-------------------------------------------------------------------------------|
-| start to download     | call [download/download](#downloaddownload)                                   |
-| download in parallel  | call [download/download](#downloaddownload) during other download             |
-| limit download speed  | call [download/download](#downloaddownload) with the option parameter         |
-| get download id       | call [download/info](#downloadinfo)                                           |
-| control to download   | call [download/stop](#downloadstop) or [resume](#downloadresume) or cancel    |
-| stop to download      | call [download/stop](#downloadstop)                                           |
-| resume to download    | call [download/resume](#downloadresume)                                       |
-| cancel to download    | call download/cancel                                                          |
+| Use Case              | How to implement the use case for the Application                                             |
+|-----------------------|-----------------------------------------------------------------------------------------------|
+| start to download     | call [download/download](#downloaddownload)                                                   |
+| download in parallel  | call [download/download](#downloaddownload) during other download                             |
+| limit download speed  | call [download/download](#downloaddownload) with the option parameter                         |
+| get download id       | call [download/info](#downloadinfo)                                                           |
+| control to download   | call [download/stop](#downloadstop) or [resume](#downloadresume) or [cancel](#downloadcancel) |
+| stop to download      | call [download/stop](#downloadstop)                                                           |
+| resume to download    | call [download/resume](#downloadresume)                                                       |
+| cancel to download    | call [download/cancel](#downloadcancel)                                                       |
 
 
 ## 3.2. Use the downloaded file
@@ -138,7 +139,7 @@ and contains the following verbs:
 | [info](#downloadinfo)             | get download information                                       |
 | [stop](#downloadstop)             | stop to download                                               |
 | [resume](#downloadresume)         | resume to download                                             |
-| cancel                            | cancel to download                                             |
+| [cancel](#downloadcancel)         | cancel to download                                             |
 | delete                            | delete the downloaded file                                     |
 | decrypt                           | decrypt the downloaded encrypted file                          |
 
@@ -561,6 +562,70 @@ PORT=1234
 UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
 TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
 curl http://$BOARDIP:$PORT/download/resume?uuid=$UUID\&token=$TOKEN\&id=507
+```
+
+
+#### *Example Response*
+
+```
+{
+  "jtype": "afb-reply",
+  "request": {
+    "status": "success"
+  }
+}
+```
+
+
+---
+
+
+### download/cancel
+
+Cancel to download, and delete the downloaded file and the download information.
+
+#### *Resource URL*
+
+http://$BOARDIP:$PORT/download/cancel
+
+#### *Session Constant*
+
+AFB_SESSION_CHECK
+
+#### *Parameters*
+
+| Name        | Required | Type     | Description                            | Default Value |
+|-------------|----------|----------|----------------------------------------|---------------|
+| id          | required | number   | the ID of the download                 | none          |
+
+| Name        | Validation                                 |
+|-------------|--------------------------------------------|
+| id          | range: 0 - 999                             |
+
+
+#### *Responses*
+
+- Sucsess
+
+None.
+
+
+- Failure
+
+| Message                                        |
+|------------------------------------------------|
+| id is invalid value                            |
+| must call when state is 0:pause or 1:running   |
+
+
+#### *Example Request*
+
+```
+BOARDIP="192.168.x.x"
+PORT=1234
+UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
+TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
+curl http://$BOARDIP:$PORT/download/cancel?uuid=$UUID\&token=$TOKEN\&id=507
 ```
 
 
