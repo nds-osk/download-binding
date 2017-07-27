@@ -16,6 +16,7 @@
     - [4.2. Download API](#42-download-api)
         - [download/setting](#downloadsetting)
         - [download/download](#downloaddownload)
+        - [download/info](#downloadinfo)
 
 # 1. Introduction
 
@@ -77,7 +78,7 @@ Optionally:
 | start to download     | call [download/download](#downloaddownload)                                   |
 | download in parallel  | call [download/download](#downloaddownload) during other download             |
 | limit download speed  | call [download/download](#downloaddownload) with the option parameter         |
-| get download id       | call download/info                                                            |
+| get download id       | call [download/info](#downloadinfo)                                                            |
 | control to download   | call download/stop or resume or cancel                                        |
 | stop to download      | call download/stop                                                            |
 | resume to download    | call download/resume                                                          |
@@ -96,9 +97,9 @@ ex) The AGL application downloads an AGL application(.wgt), and installs it in t
 
 | Use Case                    | How to implement the use case for the Application |
 |-----------------------------|---------------------------------------------------|
-| get download progress       | call download/info                                |
+| get download progress       | call [download/info](#downloadinfo)               |
 | check download is completed | check the download progress is 100%               |
-| get file name               | call download/info                                |
+| get file name               | call [download/info](#downloadinfo)               |
 | delete file                 | call download/delete                              |
 | use file                    | call other API with the file name as a parameter  |
 
@@ -132,7 +133,7 @@ and contains the following verbs:
 |-----------------------------------|----------------------------------------------------------------|
 | [setting](#downloadsetting)       | set download options                                           |
 | [download](#downloaddownload)     | download a file                                                |
-| info                              | get download information                                       |
+| [info](#downloadinfo)             | get download information                                       |
 | stop                              | stop to download                                               |
 | resume                            | resume to download                                             |
 | cancel                            | cancel to download                                             |
@@ -322,6 +323,122 @@ curl http://$BOARDIP:$PORT/download/download?uuid=$UUID\&token=$TOKEN\&url="http
 {
   "response": {
     "id": 507
+  },
+  "jtype": "afb-reply",
+  "request": {
+    "status": "success"
+  }
+}
+```
+
+
+---
+
+
+### download/info
+
+Get the download information or all download information list.
+
+#### *Resource URL*
+
+http://$BOARDIP:$PORT/download/info
+
+#### *Session Constant*
+
+AFB_SESSION_CHECK
+
+#### *Parameters*
+
+When you set no parameter, you get all download information list.
+
+| Name        | Required | Type     | Description                            | Default Value |
+|-------------|----------|----------|----------------------------------------|---------------|
+| id          | optional | number   | the ID of the download                 | none          |
+
+| Name        | Validation                                 |
+|-------------|--------------------------------------------|
+| id          | range: 0 - 999                             |
+
+#### *Responses*
+
+- Sucsess
+
+The response includes the download information.
+
+When the id is specified:
+
+| Name        | Type     | Description                                  |
+|-------------|----------|----------------------------------------------|
+| downloading | object   | the download information                     |
+
+When you set no parameter:
+
+| Name         | Type                                    | Description                                  |
+|--------------|-----------------------------------------|----------------------------------------------|
+| downloadings | array (contains the downloading object) | all download information list                |
+
+- Failure
+
+| Message                          |
+|----------------------------------|
+| max_speed is invalid value       |
+
+##### object definitions
+
+- downloading
+
+| Name        | Type     | Description                                                                          |
+|-------------|----------|--------------------------------------------------------------------------------------|
+| id          | number   | the ID of the download                                                               |
+| url         | string   | file's URL                                                                           |
+| filename    | string   | output file name                                                                     |
+| max_speed   | number   | max download speed (bytes per second)                                                |
+| state       | number   | state of download (0:pause 1:running 2:done 3:error(*1))                             |
+| progress    | number   | progress of download (%)                                                             |
+| error_type  | string   | set error type when state becomes 3:error. Details are [here](#error-information).   |
+| error_code  | number   | set error code when state becomes 3:error. Details are [here](#error-information).   |
+
+*1) When the error occured, please call [download/delete](#downloaddelete) if you want to delete the download information.
+
+###### error information
+
+| error_type  | error_code                                                                        | Description                            |
+|-------------|-----------------------------------------------------------------------------------|----------------------------------------|
+| curl        | see [CURLcode error code](https://curl.haxx.se/libcurl/c/libcurl-errors.html)     | error information in libcurl           |
+
+#### *Example Request*
+
+```
+BOARDIP="192.168.x.x"
+PORT=1234
+UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
+TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
+curl http://$BOARDIP:$PORT/download/info?uuid=$UUID\&token=$TOKEN
+```
+
+#### *Example Response*
+
+```
+{
+  "response": {
+    "downloadings": [
+      {
+        "id": 39,
+        "state": 1,
+        "progress": 80,
+        "url": "http://www.xxxxxx.co.jp/file1",
+        "filename": "test2",
+        "max_speed": 0
+      },
+      {
+        "id": 507,
+        "state": 2,
+        "progress": 100,
+        "url": "http://www.xxxxxx.co.jp/file2",
+        "filename": "test1"
+        "max_speed": 104857600
+      }
+    ]
   },
   "jtype": "afb-reply",
   "request": {
