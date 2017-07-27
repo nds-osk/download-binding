@@ -14,6 +14,7 @@
 - [4. API Specification](#4-api-specification)
     - [4.1. Overview](#41-overview)
     - [4.2. Download API](#42-download-api)
+        - [download/setting](#downloadsetting)
         - [download/download](#downloaddownload)
 
 # 1. Introduction
@@ -129,7 +130,7 @@ and contains the following verbs:
 
 | Verb name                         | Description                                                    |
 |-----------------------------------|----------------------------------------------------------------|
-| setting                           | set download options                                           |
+| [setting](#downloadsetting)       | set download options                                           |
 | [download](#downloaddownload)     | download a file                                                |
 | info                              | get download information                                       |
 | stop                              | stop to download                                               |
@@ -178,6 +179,87 @@ The following is a description of each item:
 - Example Response
 
   This is a response example.
+
+
+---
+
+
+### download/setting
+
+Set or Get default values of download options.
+
+#### *Resource URL*
+
+http://$BOARDIP:$PORT/download/setting
+
+#### *Session Constant*
+
+AFB_SESSION_CHECK
+
+#### *Parameters*
+
+If you set no parameter, you only get default values.
+
+| Name        | Required | Type     | Description                            | Default Value |
+|-------------|----------|----------|----------------------------------------|---------------|
+| max_speed   | optional | number   | max download speed (bytes per second)  | 0(unlimited)  |
+
+| Name        | Validation                                 |
+|-------------|--------------------------------------------|
+| max_speed   | range: 0(unlimited) - 104857600(100Mbps)   |
+
+#### *Responses*
+
+- Sucsess
+
+The response includes default values of download options.
+
+| Name        | Type     | Description                            |
+|-------------|----------|----------------------------------------|
+| max_speed   | number   | max download speed (bytes per second)  |
+
+- Failure
+
+| Message                          |
+|----------------------------------|
+| max_speed is invalid value       |
+
+
+#### *Example Request*
+
+```
+BOARDIP="192.168.x.x"
+PORT=1234
+UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
+TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
+curl http://$BOARDIP:$PORT/download/setting?uuid=$UUID\&token=$TOKEN\&max_speed=104857600
+```
+
+#### *Example Response*
+
+```
+{
+  "response": {
+    "max_speed": 104857600
+  },
+  "jtype": "afb-reply",
+  "request": {
+    "status": "success"
+  }
+}
+```
+```
+{
+  "jtype": "afb-reply",
+  "request": {
+     "status": "failed",
+     "info": "max_speed is invalid value"
+  }
+}
+```
+
+
+---
 
 
 ### download/download
