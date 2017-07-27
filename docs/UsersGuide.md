@@ -17,6 +17,7 @@
         - [download/setting](#downloadsetting)
         - [download/download](#downloaddownload)
         - [download/info](#downloadinfo)
+        - [download/stop](#downloadstop)
 
 # 1. Introduction
 
@@ -78,9 +79,9 @@ Optionally:
 | start to download     | call [download/download](#downloaddownload)                                   |
 | download in parallel  | call [download/download](#downloaddownload) during other download             |
 | limit download speed  | call [download/download](#downloaddownload) with the option parameter         |
-| get download id       | call [download/info](#downloadinfo)                                                            |
-| control to download   | call download/stop or resume or cancel                                        |
-| stop to download      | call download/stop                                                            |
+| get download id       | call [download/info](#downloadinfo)                                           |
+| control to download   | call [download/stop](#downloadstop) or resume or cancel                       |
+| stop to download      | call [download/stop](#downloadstop)                                           |
 | resume to download    | call download/resume                                                          |
 | cancel to download    | call download/cancel                                                          |
 
@@ -134,7 +135,7 @@ and contains the following verbs:
 | [setting](#downloadsetting)       | set download options                                           |
 | [download](#downloaddownload)     | download a file                                                |
 | [info](#downloadinfo)             | get download information                                       |
-| stop                              | stop to download                                               |
+| [stop](#downloadstop)             | stop to download                                               |
 | resume                            | resume to download                                             |
 | cancel                            | cancel to download                                             |
 | delete                            | delete the downloaded file                                     |
@@ -440,6 +441,68 @@ curl http://$BOARDIP:$PORT/download/info?uuid=$UUID\&token=$TOKEN
       }
     ]
   },
+  "jtype": "afb-reply",
+  "request": {
+    "status": "success"
+  }
+}
+```
+
+
+---
+
+
+### download/stop
+
+Stop to download.
+
+#### *Resource URL*
+
+http://$BOARDIP:$PORT/download/stop
+
+#### *Session Constant*
+
+AFB_SESSION_CHECK
+
+#### *Parameters*
+
+| Name        | Required | Type     | Description                            | Default Value |
+|-------------|----------|----------|----------------------------------------|---------------|
+| id          | required | number   | the ID of the download                 | none          |
+
+| Name        | Validation                                 |
+|-------------|--------------------------------------------|
+| id          | range: 0 - 999                             |
+
+
+#### *Responses*
+
+- Sucsess
+
+None.
+
+- Failure
+
+| Message                            |
+|------------------------------------|
+| id is invalid value                |
+| must call when state is 1:running  |
+
+
+#### *Example Request*
+
+```
+BOARDIP="192.168.x.x"
+PORT=1234
+UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
+TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
+curl http://$BOARDIP:$PORT/download/stop?uuid=$UUID\&token=$TOKEN\&id=507
+```
+
+#### *Example Response*
+
+```
+{
   "jtype": "afb-reply",
   "request": {
     "status": "success"
