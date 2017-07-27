@@ -184,15 +184,15 @@ The following is a description of each item:
 
 Download a file from the cloud server.
 
-#### ***Resource URL***
+#### *Resource URL*
 
 http://$BOARDIP:$PORT/download/download
 
-#### ***Session Constant***
+#### *Session Constant*
 
 AFB_SESSION_CHECK
 
-#### ***Parameters***
+#### *Parameters*
 
 | Name        | Required | Type     | Description                            | Default Value |
 |-------------|----------|----------|----------------------------------------|---------------|
@@ -206,7 +206,7 @@ AFB_SESSION_CHECK
 | filename    | maximum length: 255                        |
 | max_speed   | range: 0(unlimited) - 104857600(100Mbps)   |
 
-#### ***Responses***
+#### *Responses*
 
 - Sucsess
 
@@ -224,7 +224,7 @@ AFB_SESSION_CHECK
 | max_speed is invalid value       |
 
 
-#### ***Example Request***
+#### *Example Request*
 
 ```
 BOARDIP="192.168.x.x"
@@ -234,7 +234,7 @@ TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
 curl http://$BOARDIP:$PORT/download/download?uuid=$UUID\&token=$TOKEN\&url="http://www.xxxxxx.co.jp/file"\&filename="sample"
 ```
 
-#### ***Example Response***
+#### *Example Response*
 
 ```
 {
