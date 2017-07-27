@@ -20,6 +20,7 @@
         - [download/stop](#downloadstop)
         - [download/resume](#downloadresume)
         - [download/cancel](#downloadcancel)
+        - [download/delete](#downloaddelete)
 
 # 1. Introduction
 
@@ -103,7 +104,7 @@ ex) The AGL application downloads an AGL application(.wgt), and installs it in t
 | get download progress       | call [download/info](#downloadinfo)               |
 | check download is completed | check the download progress is 100%               |
 | get file name               | call [download/info](#downloadinfo)               |
-| delete file                 | call download/delete                              |
+| delete file                 | call [download/delete](#downloaddelete)           |
 | use file                    | call other API with the file name as a parameter  |
 
 
@@ -140,7 +141,7 @@ and contains the following verbs:
 | [stop](#downloadstop)             | stop to download                                               |
 | [resume](#downloadresume)         | resume to download                                             |
 | [cancel](#downloadcancel)         | cancel to download                                             |
-| delete                            | delete the downloaded file                                     |
+| [delete](#downloaddelete)         | delete the downloaded file                                     |
 | decrypt                           | decrypt the downloaded encrypted file                          |
 
 
@@ -642,3 +643,64 @@ curl http://$BOARDIP:$PORT/download/cancel?uuid=$UUID\&token=$TOKEN\&id=507
 
 
 ---
+
+
+### download/delete
+
+Delete the downloaded file and the download information.
+
+#### *Resource URL*
+
+http://$BOARDIP:$PORT/download/delete
+
+#### *Session Constant*
+
+AFB_SESSION_CHECK
+
+#### *Parameters*
+
+| Name        | Required | Type     | Description                            | Default Value |
+|-------------|----------|----------|----------------------------------------|---------------|
+| id          | required | number   | the ID of the download                 | none          |
+
+| Name        | Validation                                 |
+|-------------|--------------------------------------------|
+| id          | range: 0 - 999                             |
+
+
+#### *Responses*
+
+- Sucsess
+
+None.
+
+
+- Failure
+
+| Message                                        |
+|------------------------------------------------|
+| id is invalid value                            |
+| must call when state is 2:done or 3:error      |
+
+
+#### *Example Request*
+
+```
+BOARDIP="192.168.x.x"
+PORT=1234
+UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
+TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
+curl http://$BOARDIP:$PORT/download/delete?uuid=$UUID\&token=$TOKEN\&id=507
+```
+
+
+#### *Example Response*
+
+```
+{
+  "jtype": "afb-reply",
+  "request": {
+    "status": "success"
+  }
+}
+```
