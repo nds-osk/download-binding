@@ -1,24 +1,31 @@
-# Index
+[afb-bindings-writing]: https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-framework-binder.git;a=blob;f=doc/afb-bindings-writing.md;h=6327734efab9019e047c7999003a9abbb2eeae6f;hb=refs/heads/chinook
+[afb-application-writing]: https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-framework-binder.git;a=blob;f=doc/afb-application-writing.md;h=14199f62c5f0778c128d67595b117032e3a7291d;hb=refs/heads/chinook
 
-1. Introduction
-2. Product Summary
-3. Use Cases
-4. API Specification
-5. Notices
-6. Restrictions
+# Contents
 
+- [1. Introduction](#1-introduction)
+- [2. Product Summary](#2-product-summary)
+    - [2.1. Overview](#21-overview)
+    - [2.2. Feature](#22-feature)
+- [3. Use Cases](#3-use-cases)
+    - [3-1. Download](#31-download)
+    - [3-2. Use the downloaded file](#32-use-the-downloaded-file)
+    - [3-3. Decrypt the downloaded file](#33-decrypt-the-downloaded-file)
+- [4. API Specification](#4-api-specification)
+    - [4.1. Overview](#41-overview)
+    - [4.2. Download API](#42-download-api)
+        - [download/download](#downloaddownload)
 
 # 1. Introduction
 
 This document provides the following details of download binding:
 
-- Product Summary
-- Use Cases
-- API Specification
+- [Product Summary](#2-product-summary)
+- [Use Cases](#3-use-cases)
+- [API Specification](#4-api-specification)
 
 
 # 2. Product Summary
-
 
 ## 2.1. Overview
 
@@ -31,6 +38,7 @@ This binding is dynamically loaded libraries in the binder process.
 This binding provides an API to download files.
 
 *1) http://docs.automotivelinux.org/docs/apis_services/en/dev/reference/af-binder/afb-overview.html
+
 
 ## 2.2. Feature
 
@@ -50,7 +58,7 @@ This binding:
 
 This section shows several use cases using this binding.
 
-## 3-1. Download
+## 3.1. Download
 
 This is the basic use case to download.
 The AGL application can:
@@ -75,7 +83,7 @@ Optionally:
 | cancel to download    | call download/cancel                                                          |
 
 
-## 3-2. Use the downloaded file
+## 3.2. Use the downloaded file
 
 If The AGL application would like to use the downloaded file, it can use the file using other bindings.
 
@@ -93,7 +101,8 @@ ex) The AGL application downloads an AGL application(.wgt), and installs it in t
 | delete file                 | call download/delete                              |
 | use file                    | call other API with the file name as a parameter  |
 
-## 3-3. Decrypt the downloaded file
+
+## 3.3. Decrypt the downloaded file
 
 The AGL application can decrypt the downloaded encrypted file.
 
@@ -105,9 +114,10 @@ However, it is a precondition that the public key is exchanged with the cloud se
 |-----------------------------|---------------------------------------------------|
 | decrypt file                | call download/decrypt                             |
 
+
 # 4. API Specification
 
-## Overview
+## 4.1. Overview
 
 This binding provides an API with the following name:
 
@@ -128,7 +138,8 @@ and contains the following verbs:
 | delete                            | delete the downloaded file                                     |
 | decrypt                           | decrypt the downloaded encrypted file                          |
 
-## Download API
+
+## 4.2. Download API
 
 These are the download API Verbs specification.
 
@@ -140,24 +151,25 @@ The following is a description of each item:
 
 - Session Constant
 
-  This is ["authorisation and session requirements of the method"](https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-framework-binder.git;a=blob;f=doc/afb-bindings-writing.md;h=6327734efab9019e047c7999003a9abbb2eeae6f;hb=refs/heads/chinook).
+  This is ["authorisation and session requirements of the method"][afb-bindings-writing].
 
 - Parameters
 
   These are parameters with calling the verb.
 
 - Responses
+
     - Sucsess
 
       This is a response that will be returned when the verb succeeds.
-      This is the response object included in the [afb-reply](https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-framework-binder.git;a=blob;f=doc/afb-application-writing.md;h=14199f62c5f0778c128d67595b117032e3a7291d;hb=refs/heads/chinook),
-when request.status is "sucsess".
+      This is the response object included in the [afb-reply][afb-application-writing],
+      when request.status is "sucsess".
 
     - Failure
 
       This is a response that will be returned when the verb fails.
-      This is the request.info message included in the [afb-reply](https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-framework-binder.git;a=blob;f=doc/afb-application-writing.md;h=14199f62c5f0778c128d67595b117032e3a7291d;hb=refs/heads/chinook),
-when request.status is "failed".
+      This is the request.info message included in the [afb-reply][afb-application-writing],
+      when request.status is "failed".
 
 - Example Request
 
@@ -168,20 +180,19 @@ when request.status is "failed".
   This is a response example.
 
 
-
 ### download/download
 
 Download a file from the cloud server.
 
-#### Resource URL
+#### ***Resource URL***
 
 http://$BOARDIP:$PORT/download/download
 
-#### Session Constant
+#### ***Session Constant***
 
 AFB_SESSION_CHECK
 
-#### Parameters
+#### ***Parameters***
 
 | Name        | Required | Type     | Description                            | Default Value |
 |-------------|----------|----------|----------------------------------------|---------------|
@@ -195,25 +206,25 @@ AFB_SESSION_CHECK
 | filename    | maximum length: 255                        |
 | max_speed   | range: 0(unlimited) - 104857600(100Mbps)   |
 
-#### Responses
+#### ***Responses***
 
-##### Sucsess
+- Sucsess
 
 | Name        | Type     | Description                            |
 |-------------|----------|----------------------------------------|
 | id          | number   | the ID of the download                 |
 
-##### Failure
+- Failure
 
 | Message                          |
 |----------------------------------|
 | url is invalid value             |
 | filename is invalid value        |
-| filename already exists     |
+| filename already exists          |
 | max_speed is invalid value       |
 
 
-#### Example Request
+#### ***Example Request***
 
 ```
 BOARDIP="192.168.x.x"
@@ -223,7 +234,7 @@ TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
 curl http://$BOARDIP:$PORT/download/download?uuid=$UUID\&token=$TOKEN\&url="http://www.xxxxxx.co.jp/file"\&filename="sample"
 ```
 
-#### Example Response
+#### ***Example Response***
 
 ```
 {
@@ -236,3 +247,6 @@ curl http://$BOARDIP:$PORT/download/download?uuid=$UUID\&token=$TOKEN\&url="http
   }
 }
 ```
+
+
+---
