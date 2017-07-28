@@ -195,7 +195,7 @@ Set or Get default values of download options.
 
 #### *Resource URL*
 
-http://$BOARDIP:$PORT/download/setting
+http://$BOARDIP:$PORT/api/download/setting
 
 #### *Session Constant*
 
@@ -237,7 +237,7 @@ BOARDIP="192.168.x.x"
 PORT=1234
 UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
 TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
-curl http://$BOARDIP:$PORT/download/setting?uuid=$UUID\&token=$TOKEN\&max_speed=104857600
+curl http://$BOARDIP:$PORT/api/download/setting?uuid=$UUID\&token=$TOKEN\&max_speed=104857600
 ```
 
 #### *Example Response*
@@ -273,7 +273,7 @@ Download a file from the cloud server.
 
 #### *Resource URL*
 
-http://$BOARDIP:$PORT/download/download
+http://$BOARDIP:$PORT/api/download/download
 
 #### *Session Constant*
 
@@ -318,7 +318,7 @@ BOARDIP="192.168.x.x"
 PORT=1234
 UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
 TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
-curl http://$BOARDIP:$PORT/download/download?uuid=$UUID\&token=$TOKEN\&url="http://www.xxxxxx.co.jp/file"\&filename="sample"
+curl http://$BOARDIP:$PORT/api/download/download?uuid=$UUID\&token=$TOKEN\&url="http://www.xxxxxx.co.jp/file"\&filename="sample"
 ```
 
 #### *Example Response*
@@ -345,7 +345,7 @@ Get the download information or all download information list.
 
 #### *Resource URL*
 
-http://$BOARDIP:$PORT/download/info
+http://$BOARDIP:$PORT/api/download/info
 
 #### *Session Constant*
 
@@ -417,7 +417,7 @@ BOARDIP="192.168.x.x"
 PORT=1234
 UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
 TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
-curl http://$BOARDIP:$PORT/download/info?uuid=$UUID\&token=$TOKEN
+curl http://$BOARDIP:$PORT/api/download/info?uuid=$UUID\&token=$TOKEN
 ```
 
 #### *Example Response*
@@ -461,7 +461,7 @@ Stop to download.
 
 #### *Resource URL*
 
-http://$BOARDIP:$PORT/download/stop
+http://$BOARDIP:$PORT/api/download/stop
 
 #### *Session Constant*
 
@@ -499,7 +499,7 @@ BOARDIP="192.168.x.x"
 PORT=1234
 UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
 TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
-curl http://$BOARDIP:$PORT/download/stop?uuid=$UUID\&token=$TOKEN\&id=507
+curl http://$BOARDIP:$PORT/api/download/stop?uuid=$UUID\&token=$TOKEN\&id=507
 ```
 
 #### *Example Response*
@@ -523,7 +523,7 @@ Resume to download.
 
 #### *Resource URL*
 
-http://$BOARDIP:$PORT/download/resume
+http://$BOARDIP:$PORT/api/download/resume
 
 #### *Session Constant*
 
@@ -562,7 +562,7 @@ BOARDIP="192.168.x.x"
 PORT=1234
 UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
 TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
-curl http://$BOARDIP:$PORT/download/resume?uuid=$UUID\&token=$TOKEN\&id=507
+curl http://$BOARDIP:$PORT/api/download/resume?uuid=$UUID\&token=$TOKEN\&id=507
 ```
 
 
@@ -587,7 +587,7 @@ Cancel to download, and delete the downloaded file and the download information.
 
 #### *Resource URL*
 
-http://$BOARDIP:$PORT/download/cancel
+http://$BOARDIP:$PORT/api/download/cancel
 
 #### *Session Constant*
 
@@ -626,7 +626,7 @@ BOARDIP="192.168.x.x"
 PORT=1234
 UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
 TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
-curl http://$BOARDIP:$PORT/download/cancel?uuid=$UUID\&token=$TOKEN\&id=507
+curl http://$BOARDIP:$PORT/api/download/cancel?uuid=$UUID\&token=$TOKEN\&id=507
 ```
 
 
@@ -651,7 +651,7 @@ Delete the downloaded file and the download information.
 
 #### *Resource URL*
 
-http://$BOARDIP:$PORT/download/delete
+http://$BOARDIP:$PORT/api/download/delete
 
 #### *Session Constant*
 
@@ -690,7 +690,7 @@ BOARDIP="192.168.x.x"
 PORT=1234
 UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
 TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
-curl http://$BOARDIP:$PORT/download/delete?uuid=$UUID\&token=$TOKEN\&id=507
+curl http://$BOARDIP:$PORT/api/download/delete?uuid=$UUID\&token=$TOKEN\&id=507
 ```
 
 
