@@ -64,4 +64,49 @@ bitbake agl-demo-platform
 
 # 3. Using download binding
 
-(TBD)
+Here is an example of the steps on how to call download API.
+
+## Launch afb-daemon
+
+Launch the afb-daemon.
+
+```
+# afb-daemon --port=1234 --token=123456 [...]
+```
+
+## Connect
+
+Connects with the initial token.
+
+```
+$ curl http://$BOARDIP:1234/api/auth/connect?token=123456
+{
+  "jtype": "afb-reply",
+  "request": {
+     "status": "success",
+     "token": "850c4594-1be1-4e9b-9fcc-38cc3e6ff015",
+     "uuid": "0aef6841-2ddd-436d-b961-ae78da3b5c5f"
+  },
+  "response": {"token": "A New Token and Session Context Was Created"}
+}
+```
+
+## Call download API
+
+Call the download API.
+In the following example, call download/download.
+
+```
+$ UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
+$ TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
+$ curl http://$BOARDIP:1234/api/download/download?uuid=$UUID\&token=$TOKEN\&url="http://www.xxxxxx.co.jp/file"\&filename="sample"
+{
+  "response": {
+    "id": 507
+  },
+  "jtype": "afb-reply",
+  "request": {
+    "status": "success"
+  }
+}
+```
