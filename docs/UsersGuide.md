@@ -712,7 +712,7 @@ curl http://$BOARDIP:$PORT/api/download/delete?uuid=$UUID\&token=$TOKEN\&id=507
 
 ### download/decrypt
 
-Decrypt the downloaded encrypted file.
+Decrypt the downloaded encrypted file using the openssl.
 
 The decrypted file is overwritten to the original file.
 
