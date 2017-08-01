@@ -21,6 +21,7 @@
         - [download/resume](#downloadresume)
         - [download/cancel](#downloadcancel)
         - [download/delete](#downloaddelete)
+        - [download/decrypt](#downloaddecrypt)
 
 # 1. Introduction
 
@@ -118,7 +119,7 @@ However, it is a precondition that the public key is exchanged with the cloud se
 
 | Use Case                    | How to implement the use case for the Application |
 |-----------------------------|---------------------------------------------------|
-| decrypt file                | call download/decrypt                             |
+| decrypt file                | call [download/decrypt](#downloaddecrypt)         |
 
 
 # 4. API Specification
@@ -142,7 +143,7 @@ and contains the following verbs:
 | [resume](#downloadresume)         | resume to download                                             |
 | [cancel](#downloadcancel)         | cancel to download                                             |
 | [delete](#downloaddelete)         | delete the downloaded file                                     |
-| decrypt                           | decrypt the downloaded encrypted file                          |
+| [decrypt](#downloaddecrypt)       | decrypt the downloaded encrypted file                          |
 
 
 ## 4.2. Download API
@@ -691,6 +692,132 @@ PORT=1234
 UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
 TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
 curl http://$BOARDIP:$PORT/api/download/delete?uuid=$UUID\&token=$TOKEN\&id=507
+```
+
+
+#### *Example Response*
+
+```
+{
+  "jtype": "afb-reply",
+  "request": {
+    "status": "success"
+  }
+}
+```
+
+
+---
+
+
+### download/decrypt
+
+Decrypt the downloaded encrypted file.
+
+The decrypted file is overwritten to the original file.
+
+#### *Resource URL*
+
+http://$BOARDIP:$PORT/api/download/decrypt
+
+#### *Session Constant*
+
+AFB_SESSION_CHECK
+
+#### *Parameters*
+
+##### Common
+
+| Name        | Required | Type     | Description                              | Default Value |
+|-------------|----------|----------|------------------------------------------|---------------|
+| id          | required | number   | the ID of the download.(to be decrypted) | none          |
+| crypto      | required | number   | cryptography(0:RSA 1:AES)                | none          |
+
+| Name        | Validation                                 |
+|-------------|--------------------------------------------|
+| id          | range: 0 - 999                             |
+| crypto      | range: 0 - 1                               |
+
+##### if crypto is 0:RSA
+
+| Name        | Required | Type     | Description                            | Default Value |
+|-------------|----------|----------|----------------------------------------|---------------|
+| key(*1)     | required | string   | file path of the private key (.pem)    | none          |
+
+| Name        | Validation                                 |
+|-------------|--------------------------------------------|
+| key         | maximum length: 255                        |
+
+##### if crypto is 1:AES
+
+| Name        | Required | Type     | Description                                 | Default Value |
+|-------------|----------|----------|---------------------------------------------|---------------|
+| key_length  | required | number   | key length (0:128 1:192 2:256)              | none          |
+| mode        | required | number   | block cipher mode (0:CBC)                   | none          |
+| key(*1)     | required | string   | file path of the common key (*2)            | none          |
+| iv(*1)      | required | string   | file path of the initialization vector (*2) | none          |
+
+| Name        | Validation                                 |
+|-------------|--------------------------------------------|
+| key_length  | range: 0 - 2                               |
+| mode        | only 0                                     |
+| key         | maximum length: 255                        |
+| iv          | maximum length: 255                        |
+
+
+*1) full path or downloaded file name.
+
+*2) these files are composed of HEX character string. Here is an example:
+```
+$ cat file.key
+46496a7b83339b7f01f757b333a8a1f17e9f491521476c21
+$ cat file.iv
+c39474ac9120ec3a95359b8cc28fc260
+```
+
+#### *Responses*
+
+- Sucsess
+
+None.
+
+
+- Failure
+
+##### Common
+
+| Message                                        |
+|------------------------------------------------|
+| id is invalid value                            |
+| crypto is invalid value                        |
+| must call when state is 2:done                 |
+| key is invalid value                           |
+| failed to decrypt                              |
+
+##### if crypto is 0:RSA
+
+| Message                                        |
+|------------------------------------------------|
+| failed to read the private key                 |
+
+##### if crypto is 1:AES
+
+| Message                                        |
+|------------------------------------------------|
+| key_length is invalid value                    |
+| mode is invalid value                          |
+| iv is invalid value                            |
+| failed to read the common key                  |
+| failed to read the iv                          |
+
+#### *Example Request*
+
+```
+BOARDIP="192.168.x.x"
+PORT=1234
+UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
+TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
+curl http://$BOARDIP:$PORT/api/download/decrypt?uuid=$UUID\&token=$TOKEN\&id=507\&crypto=0\&key="/tmp/private-key.pem"
 ```
 
 
