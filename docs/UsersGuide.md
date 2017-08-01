@@ -122,6 +122,40 @@ However, it is a precondition that the public key is exchanged with the cloud se
 | decrypt file                | call [download/decrypt](#downloaddecrypt)         |
 
 
+### Use case example
+
+- Cloud Server Side
+
+1. Create the AES common key(128bit) and the Initial vector.
+```
+$ openssl rand 16 -hex > file.key
+$ openssl rand 16 -hex > file.iv
+```
+
+2. Encrypt the file.
+```
+KEY=`cat file.key`
+IV=`cat file.iv`
+openssl aes-128-cbc -e -in file.txt -out file.txt.enc -K $KEY -iv $IV -nosalt
+```
+
+3. Encrypt the AES common key using the client's public key.
+```
+openssl rsautl -encrypt -pubin -inkey public-key.pem -in file.key -out file.ek
+```
+
+- Client Side
+
+4. Call [download/download](#downloaddownload) to download the following files from the cloud server.
+    - file.ek
+    - file.iv
+    - file.txt.enc
+
+5. Call [download/decrypt](#downloaddecrypt) to decrypt the file.ek using the private key and get the AES common key.
+
+6. Call [download/decrypt](#downloaddecrypt) to decrypt the file.txt.enc using the AES common key and the Initial vector(file.iv).
+
+
 # 4. API Specification
 
 ## 4.1. Overview
