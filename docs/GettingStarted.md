@@ -1,5 +1,5 @@
 [agl-source-code]: https://wiki.automotivelinux.org/agl-distro/source-code
-[meta-afb-bindings]: TBD
+[meta-afb-bindings]: https://github.com/nds-osk/meta-afb-bindings
 
 # Contents
 

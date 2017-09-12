@@ -8,7 +8,7 @@ I have tested in the following environment:
 
 | AGL               | Board Name                            |
 |-------------------|---------------------------------------|
-| Chinook 3.0.3     | Renesas R-Car Starter Kit Pro         |
+| Chinook 3.0.5     | Renesas R-Car Starter Kit Pro         |
 
 # 2. Changes
 
