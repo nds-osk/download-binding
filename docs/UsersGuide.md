@@ -14,6 +14,7 @@
 - [4. API Specification](#4-api-specification)
     - [4.1. Overview](#41-overview)
     - [4.2. Download API](#42-download-api)
+        - [download/init](#downloadinit)
         - [download/setting](#downloadsetting)
         - [download/download](#downloaddownload)
         - [download/info](#downloadinfo)
@@ -57,9 +58,19 @@ This binding:
 - supports SSL.
 
 (The following functions supported only in commercial version.)
+- limits number of downloading in parallel in the system.
+- limits total save size per binder.
+- manages files retention period per binder.
+- keeps the download information per session, when system rebooted.
 - limits download speed.
+- enables/disables HTTP redirect.
 - decrypts a downloaded file.
 
+## 2.3. Note
+
+- The supported protocols are as follows:
+    - http (1.1 or more)
+- If you shut down the system in an incorrect procedure, the download files may disappear.
 
 # 3. Use Cases
 
@@ -170,6 +181,7 @@ and contains the following verbs:
 
 | Verb name                         | Description                                                    |
 |-----------------------------------|----------------------------------------------------------------|
+| [init](#downloadinit)             | initialize the download information.                           |
 | [setting](#downloadsetting)       | set download options                                           |
 | [download](#downloaddownload)     | download a file                                                |
 | [info](#downloadinfo)             | get download information                                       |
@@ -223,6 +235,90 @@ The following is a description of each item:
 
 ---
 
+### download/init
+
+Initialize the download information.
+
+The download information (session context) is stored in the system.
+Therefore, it keeps the download information per session, when system rebooted.
+
+It is must be called first.
+
+#### *Resource URL*
+
+http://$BOARDIP:$PORT/api/download/init
+
+#### *Session Constant*
+
+AFB_SESSION_CHECK
+
+#### *Parameters*
+
+| Name          | Required | Type     | Description                                                 | Default Value |
+|---------------|----------|----------|-------------------------------------------------------------|---------------|
+| ctx_id        | optional | string   | The ID for the download information (session context) (*1)  | none          |
+
+| Name          | Validation                                 |
+|---------------|--------------------------------------------|
+| ctx_id        | none                                       |
+
+
+*1) If you set the ID, it reads download informaton of the ID stored in the system.
+If not, initializes the download information and gets the ID.
+
+#### *Responses*
+
+- Sucsess
+
+| Name          | Type     | Description                            |
+|---------------|----------|----------------------------------------|
+| ctx_id        | string   | The ID for the download information    |
+
+
+- Failure
+
+| Message                          |
+|----------------------------------|
+| already initialized              |
+| ctx_id=%s does not exist         |
+
+
+#### *Example Request*
+
+```
+BOARDIP="192.168.x.x"
+PORT=1234
+UUID="850c4594-1be1-4e9b-9fcc-38cc3e6ff015"
+TOKEN="0aef6841-2ddd-436d-b961-ae78da3b5c5f"
+curl http://$BOARDIP:$PORT/api/download/init?uuid=$UUID\&token=$TOKEN
+```
+
+#### *Example Response*
+
+```
+{
+  "response": {
+    "ctx_id": "ffffffff"
+  },
+  "jtype": "afb-reply",
+  "request": {
+    "status": "success"
+  }
+}
+```
+```
+{
+  "jtype": "afb-reply",
+  "request": {
+     "status": "failed",
+     "info": "ctx_id is no exists"
+  }
+}
+```
+
+
+---
+
 
 ### download/setting
 
@@ -240,13 +336,28 @@ AFB_SESSION_CHECK
 
 If you set no parameter, you only get default values.
 
-| Name        | Required | Type     | Description                            | Default Value |
-|-------------|----------|----------|----------------------------------------|---------------|
-| max_speed   | optional | number   | max download speed (bytes per second)  | 0(unlimited)  |
+| Name          | Required | Type     | Description                            | Default Value |
+|---------------|----------|----------|----------------------------------------|---------------|
+| max_speed     | optional | number   | max download speed (bytes per second)  | 0(unlimited)  |
+| retention_period (*3) | optional | number   | files retention period per binder (days) | 0(indefinite) |
+| redirect      | optional | number   | HTTP redirect enable(*1)/disable       | 0(disable)    |
+| max_save_size | optional | number   | max save size per binder (*2)          | 0(unlimited)  |
 
-| Name        | Validation                                 |
-|-------------|--------------------------------------------|
-| max_speed   | range: 0(unlimited) - 104857600(100Mbps)   |
+
+| Name          | Validation                                 |
+|---------------|--------------------------------------------|
+| max_speed     | range: 0(unlimited) - 104857600(100Mbps)   |
+| retention_period | 0 - 365                                 |
+| redirect      | 0(disable) or 1(enable)                    |
+| max_save_size | 0(unlimited) - 4,294,967,295               |
+
+*1) follow any Location: header that the server sends as part of a HTTP header in a 3xx response.
+If redirect is disabled and the binding recieves 3XX response, the binding downloads the html text(message body).
+
+*2) Actually, it slightly exceeds setting value.
+
+*3) The files will be deleted when retention_period days passes since the last modify time.
+Those are the download files and download information files.
 
 #### *Responses*
 
@@ -254,16 +365,22 @@ If you set no parameter, you only get default values.
 
 The response includes default values of download options.
 
-| Name        | Type     | Description                            |
-|-------------|----------|----------------------------------------|
-| max_speed   | number   | max download speed (bytes per second)  |
+| Name          | Type     | Description                            |
+|---------------|----------|----------------------------------------|
+| max_speed     | number   | max download speed (bytes per second)  |
+| retention_period | number   | files retention period per binder (days) |
+| redirect      | number   | HTTP redirect enable/disable           |
+| max_save_size | number   | max save size per binder               |
 
 - Failure
 
 | Message                          |
 |----------------------------------|
 | max_speed is invalid value       |
-
+| retention_period is invalid value|
+| redirect is invalid value        |
+| max_save_size is invalid value   |
+| download/init is must be called first |
 
 #### *Example Request*
 
@@ -280,7 +397,10 @@ curl http://$BOARDIP:$PORT/api/download/setting?uuid=$UUID\&token=$TOKEN\&max_sp
 ```
 {
   "response": {
-    "max_speed": 104857600
+    "max_speed": 104857600,
+    "retention_period": 365,
+    "redirect": 1,
+    "max_save_size": 4294967295
   },
   "jtype": "afb-reply",
   "request": {
@@ -321,12 +441,14 @@ AFB_SESSION_CHECK
 | url         | required | string   | file's URL                             | none          |
 | filename    | required | string   | output file name                       | none          |
 | max_speed   | optional | number   | max download speed (bytes per second)  | 0(unlimited)  |
+| redirect    | optional | number   | HTTP redirect enable(*1)/disable       | 0(disable)    |
 
 | Name        | Validation                                 |
 |-------------|--------------------------------------------|
 | url         | maximum length: 2083                       |
 | filename    | maximum length: 255                        |
 | max_speed   | range: 0(unlimited) - 104857600(100Mbps)   |
+
 
 #### *Responses*
 
@@ -340,11 +462,15 @@ AFB_SESSION_CHECK
 
 | Message                          |
 |----------------------------------|
+| url is NULL                      |
 | url is invalid value             |
+| filename is NULL                 |
 | filename is invalid value        |
 | filename already exists          |
 | max_speed is invalid value       |
-
+| redirect is invalid value        |
+| download/init is must be called first |
+| max downloadable number in pararell in the system is (max_download_num) |
 
 #### *Example Request*
 
@@ -415,12 +541,16 @@ When you set no parameter:
 | Name         | Type                                    | Description                                  |
 |--------------|-----------------------------------------|----------------------------------------------|
 | downloadings | array (contains the downloading object) | all download information list                |
+| system_info  | object                                  | system information about download            |
+| save_size    | number                                  | total save size per binder                   |
 
 - Failure
 
 | Message                          |
 |----------------------------------|
+| download/init is must be called first |
 | max_speed is invalid value       |
+| max save size is (max_save_size) |
 
 ##### object definitions
 
@@ -431,13 +561,30 @@ When you set no parameter:
 | id          | number   | the ID of the download                                                               |
 | url         | string   | file's URL                                                                           |
 | filename    | string   | output file name                                                                     |
+| size_total  | number   | total size of file to be downloaded [byte] (*3)                                      |
+| size        | number   | current file size [byte]                                                             |
 | max_speed   | number   | max download speed (bytes per second)                                                |
-| state       | number   | state of download (0:pause 1:running 2:done 3:error(*1))                             |
+| redirect    | number   | HTTP redirect enable/disable                                                         |
+| state       | number   | state of download (0:pause 1:running 2:done(*2) 3:error(*1))                         |
 | progress    | number   | progress of download (%)                                                             |
 | error_type  | string   | set error type when state becomes 3:error. Details are [here](#error-information).   |
 | error_code  | number   | set error code when state becomes 3:error. Details are [here](#error-information).   |
+| response_code | number | get the last HTTP response code (only when state of download is 2:done or 3:error)   |
 
 *1) When the error occured, please call [download/delete](#downloaddelete) if you want to delete the download information.
+
+*2) If the state is done, the downloaded file is not always what you intended. Please check the response_code to judge it.
+
+*3) It is -1 until the binding gets the total size from the cloud server.
+
+- system_info
+
+| Name              | Type     | Description                                                                          |
+|-------------------|----------|--------------------------------------------------------------------------------------|
+| max_download_num  | number   | max downloadable number in pararell in the system (default is 6)(*1)                 |
+| download_num      | number   | number of downloading in parallel in the system                                      |
+
+*1) you can setting only in header file.
 
 ###### error information
 
@@ -523,7 +670,10 @@ None.
 
 | Message                            |
 |------------------------------------|
+| id is NULL                         |
 | id is invalid value                |
+| download/init is must be called first |
+| id=%d is no exist                  |
 | must call when state is 1:running  |
 
 
@@ -586,7 +736,10 @@ None.
 
 | Message                          |
 |----------------------------------|
+| id is NULL                       |
 | id is invalid value              |
+| download/init is must be called first |
+| id=%d is no exist                |
 | must call when state is 0:pause  |
 
 
@@ -650,7 +803,10 @@ None.
 
 | Message                                        |
 |------------------------------------------------|
+| id is NULL                                     |
 | id is invalid value                            |
+| download/init is must be called first          |
+| id=%d is no exist                              |
 | must call when state is 0:pause or 1:running   |
 
 
@@ -714,7 +870,10 @@ None.
 
 | Message                                        |
 |------------------------------------------------|
+| id is NULL                                     |
 | id is invalid value                            |
+| download/init is must be called first          |
+| id=%d is no exist                              |
 | must call when state is 2:done or 3:error      |
 
 
@@ -815,34 +974,47 @@ c39474ac9120ec3a95359b8cc28fc260
 
 None.
 
-
 - Failure
-
-##### Common
-
-| Message                                        |
-|------------------------------------------------|
-| id is invalid value                            |
-| crypto is invalid value                        |
-| must call when state is 2:done                 |
-| key is invalid value                           |
-| failed to decrypt                              |
 
 ##### if crypto is 0:RSA
 
 | Message                                        |
 |------------------------------------------------|
-| failed to read the private key                 |
+| id is NULL                                     |
+| id is invalid value                            |
+| crypto is NULL                                 |
+| crypto is invalid value                        |
+| key is NULL                                    |
+| key is invalid value                           |
+| download/init is must be called first          |
+| id=%d is no exist                              |
+| must call when state is 2:done                 |
+| can't read key file                            |
+| failed to decrypt                              |
+
 
 ##### if crypto is 1:AES
 
 | Message                                        |
 |------------------------------------------------|
+| id is NULL                                     |
+| id is invalid value                            |
+| crypto is NULL                                 |
+| crypto is invalid value                        |
+| key_length is NULL                             |
 | key_length is invalid value                    |
+| mode is NULL                                   |
 | mode is invalid value                          |
+| key is NULL                                    |
+| key is invalid value                           |
+| iv is NULL                                     |
 | iv is invalid value                            |
-| failed to read the common key                  |
-| failed to read the iv                          |
+| download/init is must be called first          |
+| id=%d is no exist                              |
+| must call when state is 2:done                 |
+| can't read key file                            |
+| can't read iv file                             |
+| failed to decrypt                              |
 
 #### *Example Request*
 

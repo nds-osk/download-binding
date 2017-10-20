@@ -29,11 +29,11 @@ static int validation_key_length(const char *pparam, char *perr, size_t size);
 static int validation_mode(const char *pparam, char *perr, size_t size);
 static int validation_key(const char *pparam, char *perr, size_t size);
 static int validation_iv(const char *pparam, char *perr, size_t size);
+static int validation_retention_period(const char *pparam, char *perr, size_t size);
 
 static int isNumber(const char *pstr)
 {
 	int isnum = 1;		/* 1:true 0:false */
-	char array[16];		/* max length:15 */
 	int i;
 	size_t len;
 
@@ -42,13 +42,12 @@ static int isNumber(const char *pstr)
 	}
 
 	len = strlen(pstr);
-	if (strlen(pstr) >= sizeof(array)) {
+	if (len > 15) {
 		return 0;
 	}
 
-	(void)strcpy(array, pstr);
-	for (i = 0; array[i] != '\0'; i++) {
-		if (('9' < array[i]) || ('0' > array[i])) {
+	for (i = 0; pstr[i] != '\0'; i++) {
+		if (('9' < pstr[i]) || ('0' > pstr[i])) {
 			isnum = 0;
 			break;
 		}
@@ -135,9 +134,9 @@ static int validation_filename(const char *pparam, char *perr, size_t size)
 		return 1;
 	}
 
-	/* maximum length: 255 */
+	/* maximum length: DLAPI_FILENAME_MAX */
 	ilen = strlen(pparam);
-	if (ilen > (unsigned int)255) {
+	if (ilen > (unsigned int)DLAPI_FILENAME_MAX) {
 		(void)snprintf(perr, size, "%s", pcomm);
 		return 1;
 	}
@@ -233,9 +232,9 @@ static int validation_key(const char *pparam, char *perr, size_t size)
 		return 1;
 	}
 
-	/* maximum length: 255 */
+	/* maximum length: DLAPI_FILENAME_MAX */
 	ilen = strlen(pparam);
-	if (ilen > (unsigned int)255) {
+	if (ilen > (unsigned int)DLAPI_FILENAME_MAX) {
 		(void)snprintf(perr, size, "%s", pcomm);
 		return 1;
 	}
@@ -253,9 +252,33 @@ static int validation_iv(const char *pparam, char *perr, size_t size)
 		return 1;
 	}
 
-	/* maximum length: 255 */
+	/* maximum length: DLAPI_FILENAME_MAX */
 	ilen = strlen(pparam);
-	if (ilen > (unsigned int)255) {
+	if (ilen > (unsigned int)DLAPI_FILENAME_MAX) {
+		(void)snprintf(perr, size, "%s", pcomm);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int validation_retention_period(const char *pparam, char *perr, size_t size)
+{
+	const char *pcomm = "retention_period  is invalid value";
+	int id;
+
+	if (pparam == NULL) {
+		(void)snprintf(perr, size, "retention_period  is NULL");
+		return 1;
+	}
+	if (isNumber(pparam) == 0) {
+		(void)snprintf(perr, size, "%s", pcomm);
+		return 1;
+	}
+
+	/* range: 0 - 365 */
+	id = atoi(pparam);
+	if ((id < 0) || (id > 365)) {
 		(void)snprintf(perr, size, "%s", pcomm);
 		return 1;
 	}
@@ -288,6 +311,8 @@ int validation(const char *pname, const char *pparam, char *perr, size_t size)
 		ret = validation_key(pparam, perr, size);
 	} else if (strcmp(pname, "iv") == 0) {
 		ret = validation_iv(pparam, perr, size);
+	} else if (strcmp(pname, "retention_period") == 0) {
+		ret = validation_retention_period(pparam, perr, size);
 	} else {
 		ret = 1;
 		(void)fprintf(stderr, "%s is invalid parameter pname", pname);

@@ -25,6 +25,9 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <glib.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "download-api.h"
 #include "downloader.h"
 #include "validation.h"
@@ -33,22 +36,17 @@
  */
 static const struct afb_binding_interface *pitf;
 
-/*
- * definition of default download option
- */
-typedef struct {
-	curl_off_t dloMaxSpeed;	/* max download speed (bytes per second) */
-} DL_OPT;
 
 /*
  * definition of a download
  */
 typedef struct {
 	GSList *pdlcList;
-	DL_OPT dlcOpt;
 } DL_CTX;
 
 /* Function prototypes */
+static void make_dir(const char *pdir);
+static void init_dirs(void);
 static int search_downloading(const DL_INFO * pdl, const int *pid);
 static DL_INFO *find_downloading(DL_CTX * pctx, int id);
 static DL_INFO *get_new_downloading(DL_CTX * pctx);
@@ -59,8 +57,8 @@ static DL_CTX *download_of_req(struct afb_req req);
 static struct json_object *describe_downloading(const DL_INFO * pdl);
 static struct json_object *describe(DL_CTX * pctx, int id);
 static int start_download(struct afb_req req, DL_INFO * pdl);
-static int is_file(const char *filepath);
-static int remove_dlfile(DL_CTX * pctx, DL_INFO * pdl);
+static int remove_dlinfo(DL_CTX * pctx, DL_INFO * pdl);
+void get_dl_pathname(char *ppath, size_t size, const char *pfname);
 static void cb_download(struct afb_req req);
 static void cb_info(struct afb_req req);
 static void cb_stop(struct afb_req req);
@@ -69,16 +67,47 @@ static void cb_cancel(struct afb_req req);
 static void cb_delete(struct afb_req req);
 
 /*
+ * make directory
+ */
+static void make_dir(const char *pdir)
+{
+	int ret;
+
+	if (pdir == NULL) {
+		(void)fprintf(stderr, "make_dir():argument is NULL\n");
+		return;
+	}
+	ret = mkdir(pdir, ACCESSPERMS);
+	if (ret == -1) {
+		if (errno != EEXIST) {
+			perror("make_dir():mkdir() error");
+		}
+	}
+}
+
+/*
+ * init directory
+ */
+static void init_dirs(void)
+{
+	make_dir(API_DIR);
+	make_dir(API_DL_DIR);
+	make_dir(API_CTX_DIR);
+}
+
+/*
  * Searchs a downloading having the 'id'.
  * Returns it if found or NULL otherwise.
  */
 static int search_downloading(const DL_INFO * pdl, const int *pid)
 {
-	int result = 1;
-	if (pdl->dliId == *pid) {
-		result = 0;
+	if (pdl == NULL || pid == NULL) {
+		return 1;
 	}
-	return result;
+	if (pdl->dliId == *pid) {
+		return 0;
+	}
+	return 1;
 }
 
 /*
@@ -102,6 +131,7 @@ static DL_INFO *find_downloading(DL_CTX * pctx, int id)
 static DL_INFO *get_new_downloading(DL_CTX * pctx)
 {
 	int ret;
+	int id;
 
 	/* allocation */
 	DL_INFO *pdl = calloc((size_t) 1, sizeof *pdl);
@@ -110,8 +140,9 @@ static DL_INFO *get_new_downloading(DL_CTX * pctx)
 	pdl->dliState = DL_STATE_RUNNING;
 	pdl->dliProg = 0;
 	pdl->dliReqStop = 0;
-	pdl->dliTotal = (curl_off_t) 0;
-	pdl->dliNow = (curl_off_t) 0;
+	pdl->dliTotal = (curl_off_t) - 1;
+	pdl->dliSize = (curl_off_t) 0;
+	pdl->dliResCode = 0;
 	pdl->pdliMutex = calloc((size_t) 1, sizeof(pthread_mutex_t));
 	ret = pthread_mutex_init(pdl->pdliMutex, NULL);
 	if (ret != 0) {
@@ -122,11 +153,11 @@ static DL_INFO *get_new_downloading(DL_CTX * pctx)
 	/* set default option */
 	pdl->pdliUrl = NULL;
 	pdl->pdliFileName = NULL;
-	pdl->dliMaxSpeed = pctx->dlcOpt.dloMaxSpeed;
 
 	do {
-		pdl->dliId = (rand() >> 2) % 1000;
-	} while ((g_slist_find_custom(pctx->pdlcList, &pdl->dliId, (GCompareFunc) & search_downloading) != NULL) || (pdl->dliId == 0));
+		id = (rand() >> 2) % 1000;
+	} while ((g_slist_find_custom(pctx->pdlcList, &id, (GCompareFunc) & search_downloading) != NULL) || (id == 0));
+	pdl->dliId = id;
 
 	/* link */
 	pctx->pdlcList = g_slist_append(pctx->pdlcList, pdl);
@@ -160,9 +191,6 @@ static DL_CTX *get_new_download(void)
 	/* allocation */
 	DL_CTX *pctx = calloc((size_t) 1, sizeof *pctx);
 
-	/* default option */
-	pctx->dlcOpt.dloMaxSpeed = (curl_off_t) 0;
-
 	return pctx;
 }
 
@@ -190,12 +218,15 @@ static struct json_object *describe_downloading(const DL_INFO * pdl)
 	(void)json_object_object_add(parr, "progress", json_object_new_int(pdl->dliProg));
 	(void)json_object_object_add(parr, "url", json_object_new_string(pdl->pdliUrl));
 	(void)json_object_object_add(parr, "filename", json_object_new_string(pdl->pdliFileName));
-	(void)json_object_object_add(parr, "max_speed", json_object_new_int((int)pdl->dliMaxSpeed));
+	(void)json_object_object_add(parr, "size_total", json_object_new_int64(pdl->dliTotal));
+	(void)json_object_object_add(parr, "size", json_object_new_int64(pdl->dliSize));
 	if (pdl->dliState == DL_STATE_ERROR) {
 		(void)json_object_object_add(parr, "error_type", json_object_new_string(pdl->pdliErrType));
 		(void)json_object_object_add(parr, "error_code", json_object_new_int((int)pdl->dliErrCode));
 	}
-
+	if (pdl->dliState == DL_STATE_DONE || pdl->dliState == DL_STATE_ERROR) {
+		(void)json_object_object_add(parr, "response_code", json_object_new_int((int)pdl->dliResCode));
+	}
 	return parr;
 }
 
@@ -263,7 +294,7 @@ static int start_download(struct afb_req req, DL_INFO * pdl)
 /*
  * is file existed
  */
-static int is_file(const char *filepath)
+int is_file(const char *filepath)
 {
 	FILE *pf = NULL;
 	int isfile = 0;
@@ -278,33 +309,27 @@ static int is_file(const char *filepath)
 }
 
 /* remove downloaded file and information */
-static int remove_dlfile(DL_CTX * pctx, DL_INFO * pdl)
+static int remove_dlinfo(DL_CTX * pctx, DL_INFO * pdl)
 {
-	int ret = 0;
-	int isfile = 0;
+	int ret;
 
-	ret = pthread_mutex_lock(pdl->pdliMutex);
+	ret = remove_dlfile(pdl);
 	if (ret != 0) {
-		(void)fprintf(stderr, "remove_dlfile():pthread_mutex_lock() failed\n");
-		return ret;
+		return 1;
 	}
+	release_downloading(pdl);
+	pctx->pdlcList = g_slist_remove(pctx->pdlcList, pdl);
 
-	isfile = is_file(pdl->pdliFileName);
-	if (isfile == 1) {
-		ret = remove((const char *)pdl->pdliFileName);
-	}
-	if (ret == 0) {
-		release_downloading(pdl);
-		pctx->pdlcList = g_slist_remove(pctx->pdlcList, pdl);
-	}
+	return 0;
+}
 
-	ret = pthread_mutex_unlock(pdl->pdliMutex);
-	if (ret != 0) {
-		(void)fprintf(stderr, "remove_dlfile():pthread_mutex_unlock() failed\n");
-		return ret;
+/* get download file path name */
+void get_dl_pathname(char *ppath, size_t size, const char *pfname)
+{
+	if (ppath == NULL || pfname == NULL) {
+		return;
 	}
-
-	return ret;
+	(void)snprintf(ppath, size, "%s%s", API_DL_DIR, pfname);
 }
 
 
@@ -321,6 +346,8 @@ static void cb_download(struct afb_req req)
 	char buf[1024];
 	char err[128];
 	const char *purl, *pfile;
+	size_t pathsize;
+	char pfpath[API_DIR_MAX + DLAPI_FILENAME_MAX + 1];
 
 	INFO(pitf, "method 'download' called");
 
@@ -339,7 +366,8 @@ static void cb_download(struct afb_req req)
 	}
 
 	/* file check */
-	if (is_file(pfile) == 1) {
+	get_dl_pathname(pfpath, sizeof(pfpath), pfile);
+	if (is_file(pfpath) == 1) {
 		(void)afb_req_fail(req, "failed", "filename already exists");
 		return;
 	}
@@ -351,10 +379,8 @@ static void cb_download(struct afb_req req)
 	pdl = get_new_downloading(pctx);
 
 	/* set required parameters */
-	pdl->pdliUrl = calloc(strlen(purl) + (size_t) 1, sizeof *pdl->pdliUrl);
-	pdl->pdliFileName = calloc(strlen(pfile) + (size_t) 1, sizeof *pdl->pdliFileName);
-	(void)strcpy(pdl->pdliUrl, purl);
-	(void)strcpy(pdl->pdliFileName, pfile);
+	pdl->pdliUrl = strdup(purl);
+	pdl->pdliFileName = strdup(pfpath);
 
 	/* start download */
 	if (start_download(req, pdl) != 0) {
@@ -430,9 +456,6 @@ static void cb_stop(struct afb_req req)
 
 	INFO(pitf, "method 'stop' called");
 
-	/* retrieves the context for the session */
-	pctx = download_of_req(req);
-
 	/* retrieves the arguments */
 	pid = afb_req_value(req, "id");
 
@@ -441,6 +464,10 @@ static void cb_stop(struct afb_req req)
 		(void)afb_req_fail(req, "failed", (const char *)err);
 		return;
 	}
+
+	/* retrieves the context for the session */
+	pctx = download_of_req(req);
+
 
 	/* find a downloading */
 	iId = atoi(pid);
@@ -476,9 +503,6 @@ static void cb_resume(struct afb_req req)
 
 	INFO(pitf, "method 'resume' called");
 
-	/* retrieves the context for the session */
-	pctx = download_of_req(req);
-
 	/* retrieves the arguments */
 	pid = afb_req_value(req, "id");
 
@@ -487,6 +511,10 @@ static void cb_resume(struct afb_req req)
 		(void)afb_req_fail(req, "failed", (const char *)err);
 		return;
 	}
+
+	/* retrieves the context for the session */
+	pctx = download_of_req(req);
+
 
 	/* find a downloading */
 	iid = atoi(pid);
@@ -525,9 +553,6 @@ static void cb_cancel(struct afb_req req)
 
 	INFO(pitf, "method 'cancel' called");
 
-	/* retrieves the context for the session */
-	pctx = download_of_req(req);
-
 	/* retrieves the arguments */
 	pid = afb_req_value(req, "id");
 
@@ -536,6 +561,10 @@ static void cb_cancel(struct afb_req req)
 		(void)afb_req_fail(req, "failed", (const char *)err);
 		return;
 	}
+
+	/* retrieves the context for the session */
+	pctx = download_of_req(req);
+
 
 	/* find a downloading */
 	iid = atoi(pid);
@@ -555,12 +584,11 @@ static void cb_cancel(struct afb_req req)
 	pdl->dliReqStop = 1;
 
 	/* remove file */
-	ret = remove_dlfile(pctx, pdl);
+	ret = remove_dlinfo(pctx, pdl);
 	if (ret != 0) {
 		(void)afb_req_fail(req, "failed", "failed to delete file");
 		return;
 	}
-
 	/* send response */
 	(void)afb_req_success(req, NULL, NULL);
 }
@@ -579,9 +607,6 @@ static void cb_delete(struct afb_req req)
 
 	INFO(pitf, "method 'delete' called");
 
-	/* retrieves the context for the session */
-	pctx = download_of_req(req);
-
 	/* retrieves the arguments */
 	pid = afb_req_value(req, "id");
 
@@ -590,6 +615,10 @@ static void cb_delete(struct afb_req req)
 		(void)afb_req_fail(req, "failed", (const char *)err);
 		return;
 	}
+
+	/* retrieves the context for the session */
+	pctx = download_of_req(req);
+
 
 	/* find a downloading */
 	iid = atoi(pid);
@@ -606,12 +635,11 @@ static void cb_delete(struct afb_req req)
 	}
 
 	/* remove file */
-	ret = remove_dlfile(pctx, pdl);
+	ret = remove_dlinfo(pctx, pdl);
 	if (ret != 0) {
 		(void)afb_req_fail(req, "failed", "failed to delete file");
 		return;
 	}
-
 	/* send response */
 	(void)afb_req_success(req, NULL, NULL);
 }
@@ -652,5 +680,8 @@ const struct afb_binding *afbBindingV1Register(const struct
 					       afb_binding_interface *interface)
 {
 	pitf = interface;	/* records the interface for accessing afb-daemon */
+
+	init_dirs();		/* init directories */
+
 	return &binding_description;	/* returns the description of the binding */
 }

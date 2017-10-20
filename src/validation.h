@@ -15,5 +15,8 @@
  */
 #ifndef VALIDATION_H
 #define VALIDATION_H
+
+#define DLAPI_FILENAME_MAX	255	/* this filesize is download-api's especification */
+
 extern int validation(const char *pname, const char *pparam, char *perr, size_t size);
 #endif

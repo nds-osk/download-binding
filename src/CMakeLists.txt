@@ -1,6 +1,9 @@
 PKG_CHECK_MODULES(afb afb-daemon)
 PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
-IF(afb_FOUND)
+PKG_CHECK_MODULES(curl REQUIRED libcurl)
+PKG_CHECK_MODULES(crypto REQUIRED libcrypto)
+
+IF(afb_FOUND AND glib_FOUND AND curl_FOUND AND crypto_FOUND)
     MESSAGE(STATUS "Creation download-api for AFB-DAEMON")
     EXECUTE_PROCESS(
             COMMAND pkg-config --variable binding_install_dir afb-daemon

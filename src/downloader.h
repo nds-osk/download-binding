@@ -42,14 +42,19 @@ typedef struct {
 	DL_STATE dliState;	/* state of download  */
 	int dliProg;		/* progress of the downloading [%] */
 	curl_off_t dliTotal;	/* total size of file to be downloaded [byte] */
-	curl_off_t dliNow;	/* size downloaded before resume() is called [byte] */
+	curl_off_t dliSize;	/* current file size [byte] */
 	char *pdliErrType;	/* error type */
 	int dliErrCode;		/* error code */
+	long dliResCode;	/* response code */
 
 	/* other */
 	int dliReqStop;		/* request to stop download */
 	pthread_mutex_t *pdliMutex;	/* for synchronization of download file and DL_INFO */
+	char *pdliCtxId;	/* this donwnlod's session context id */
+	pthread_mutex_t *pdliMutexCtxFile;	/* for synchronization of context data file */
+	off_t dliWriteOffset;	/* this download's write offset */
 } DL_INFO;
 
+extern int remove_dlfile(DL_INFO * pdl);
 extern void *dl_download(void *p);
 #endif

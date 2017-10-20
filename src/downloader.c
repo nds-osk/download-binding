@@ -16,6 +16,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <curl/curl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
@@ -23,43 +26,91 @@
 #include "downloader.h"
 
 /* Function prototypes */
-static long int get_filesize(FILE * pf);
-static size_t write_data(const void *ptr, size_t size, size_t nmemb, const char *filepath);
+static off_t get_filesize(const char *pfname);
+static size_t write_data(const void *ptr, size_t size, size_t nmemb, DL_INFO * pdl);
 static int xferinfo(void *p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow);
 
-static long int get_filesize(FILE * pf)
+/* remove downloaded file */
+int remove_dlfile(DL_INFO * pdl)
 {
-	(void)fseek(pf, 0, SEEK_END);
-	return ftell(pf);
+	int ret = 0;
+	int isfile = 0;
+
+	ret = pthread_mutex_lock(pdl->pdliMutex);
+	if (ret != 0) {
+		(void)fprintf(stderr, "remove_dlfile():pthread_mutex_lock() failed\n");
+		return ret;
+	}
+
+	isfile = is_file(pdl->pdliFileName);
+	if (isfile == 1) {
+		ret = remove((const char *)pdl->pdliFileName);
+		if (ret != 0) {
+			pthread_mutex_unlock(pdl->pdliMutex);
+			return ret;
+		}
+	}
+
+	ret = pthread_mutex_unlock(pdl->pdliMutex);
+	if (ret != 0) {
+		(void)fprintf(stderr, "remove_dlfile():pthread_mutex_unlock() failed\n");
+		return ret;
+	}
+
+	return ret;
 }
 
-static size_t write_data(const void *ptr, size_t size, size_t nmemb, const char *filepath)
+static off_t get_filesize(const char *pfname)
+{
+	int fd;
+	struct stat stbuf;
+
+	fd = open(pfname, O_RDONLY);
+	if (fd < 0) {
+		perror("get_filesize() error");
+		return -1;
+	}
+
+	if (fstat(fd, &stbuf) < 0) {
+		perror("get_filesize() error");
+		return -1;
+	}
+
+	if (close(fd) < 0) {
+		perror("get_filesize() error");
+		return -1;
+	}
+
+	return stbuf.st_size;
+}
+
+static size_t write_data(const void *ptr, size_t size, size_t nmemb, DL_INFO * pdl)
 {
 	FILE *pf = NULL;
 	size_t written;
+	const char *filepath = pdl->pdliFileName;
+	off_t write_offset = pdl->dliWriteOffset;
 
 	if (filepath == NULL) {
 		return (size_t) CURLE_WRITE_ERROR;
 	}
-	pf = fopen(filepath, "r");
+	pf = fopen(filepath, "r+");
 
 	if (pf == NULL) {	/* file is no exist */
 		return (size_t) CURLE_WRITE_ERROR;
 	}
+
+	/* move to writing start position */
+	fseeko(pf, write_offset, SEEK_SET);
+
+	written = fwrite(ptr, size, nmemb, pf);
 	(void)fclose(pf);
 
-	/* write data */
-	pf = fopen(filepath, "a");
-	if (pf != NULL) {
-		written = fwrite(ptr, size, nmemb, pf);
-		(void)fclose(pf);
-
-		if (written < nmemb) {
-			return (size_t) CURLE_WRITE_ERROR;
-		}
-	} else {
+	if (written < nmemb) {
 		return (size_t) CURLE_WRITE_ERROR;
 	}
+	write_offset = write_offset + (size * nmemb);
+	pdl->dliWriteOffset = write_offset;
 
 	return written;
 }
@@ -70,14 +121,17 @@ static int xferinfo(void *p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ul
 	DL_INFO *pdl = (DL_INFO *) p;
 	curl_off_t wprogress;
 
-	if (pdl->dliTotal == (curl_off_t) 0) {
+	if (dltotal <= 0) {	/* for the first few times, total = 0 */
+		return 0;
+	}
+	if (pdl->dliTotal < (curl_off_t) 0) {	/* no set ? */
 		pdl->dliTotal = dltotal;
 	}
+
 	/* calculate the progress rete */
-	if ((curl_off_t) 0 < dltotal) {
-		wprogress = ((curl_off_t) 100 * (pdl->dliNow + dlnow)) / pdl->dliTotal;
-		pdl->dliProg = (int)wprogress;
-	}
+	pdl->dliSize = pdl->dliTotal - (dltotal - dlnow);
+	wprogress = ((curl_off_t) 100 * pdl->dliSize) / pdl->dliTotal;
+	pdl->dliProg = (int)wprogress;
 
 	/* check request */
 	if (pdl->dliReqStop == 1) {
@@ -96,10 +150,10 @@ void *dl_download(void *p)
 	DL_INFO *pdl = (DL_INFO *) p;
 	const char *purl = pdl->pdliUrl;
 	const char *pfname = pdl->pdliFileName;
-	long int filesize;
 	char errbuf[CURL_ERROR_SIZE];
 	size_t errlen;
 	int ret;
+	long res_code;
 
 	ret = pthread_mutex_lock(pdl->pdliMutex);
 	if (ret != 0) {
@@ -114,16 +168,14 @@ void *dl_download(void *p)
 	}
 
 	if ((pcurl != 0) && (pf != 0)) {
-		/* get current file size */
-		filesize = get_filesize(pf);
-		pdl->dliNow = (curl_off_t) filesize;
 		(void)fclose(pf);
 		pf = NULL;
 
+		pdl->dliWriteOffset = pdl->dliSize;
 		(void)curl_easy_setopt(pcurl, CURLOPT_URL, purl);
 		(void)curl_easy_setopt(pcurl, CURLOPT_WRITEFUNCTION, &write_data);
-		(void)curl_easy_setopt(pcurl, CURLOPT_WRITEDATA, pfname);
-		(void)curl_easy_setopt(pcurl, CURLOPT_RESUME_FROM_LARGE, filesize);
+		(void)curl_easy_setopt(pcurl, CURLOPT_WRITEDATA, pdl);
+		(void)curl_easy_setopt(pcurl, CURLOPT_RESUME_FROM_LARGE, pdl->dliWriteOffset);
 		(void)curl_easy_setopt(pcurl, CURLOPT_ERRORBUFFER, errbuf);
 #if LIBCURL_VERSION_NUM >= 0x072000
 		(void)curl_easy_setopt(pcurl, CURLOPT_XFERINFOFUNCTION, &xferinfo);
@@ -131,8 +183,6 @@ void *dl_download(void *p)
 #endif
 		(void)curl_easy_setopt(pcurl, CURLOPT_NOPROGRESS, 0L);
 		(void)curl_easy_setopt(pcurl, CURLOPT_FAILONERROR, 1L);
-		(void)curl_easy_setopt(pcurl, CURLOPT_MAX_RECV_SPEED_LARGE, pdl->dliMaxSpeed);
-
 		res = curl_easy_perform(pcurl);
 		if (res != CURLE_OK) {
 			errlen = strlen(errbuf);
@@ -143,19 +193,28 @@ void *dl_download(void *p)
 				(void)fprintf(stderr, "%s\n", curl_easy_strerror(res));
 			}
 		}
+		/* get the last response code */
+		(void)curl_easy_getinfo(pcurl, CURLINFO_RESPONSE_CODE, &res_code);
+		pdl->dliResCode = res_code;
 	}
 
-	if (pdl->dliReqStop == 1) {
+	if (res == CURLE_OK) {
+		/* in case of 0 byte file */
+		if (pdl->dliTotal < (curl_off_t) 0) {	/* no set ? */
+			pdl->dliTotal = (curl_off_t) 0;
+			pdl->dliSize = (curl_off_t) 0;
+			pdl->dliProg = 100;
+		}
+
+		pdl->dliState = DL_STATE_DONE;
+	} else if (res == CURLE_ABORTED_BY_CALLBACK && pdl->dliReqStop == 1) {
 		pdl->dliState = DL_STATE_PAUSE;
-	} else if (res != CURLE_OK) {
+	} else {		/* ERROR */
 		/* set error info */
 		pdl->dliState = DL_STATE_ERROR;
 		pdl->pdliErrType = "curl";
 		pdl->dliErrCode = (int)res;
-	} else {		/* finish to download */
-		pdl->dliState = DL_STATE_DONE;
 	}
-
 	/* always cleanup */
 	if (pcurl != 0) {
 		curl_easy_cleanup(pcurl);

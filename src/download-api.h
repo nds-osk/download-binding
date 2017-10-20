@@ -15,5 +15,14 @@
  */
 #ifndef DOWNLOADAPI_H
 #define DOWNLOADAPI_H
-#define DL_COMMERCIAL
+
+#include "downloader.h"
+
+
+#define API_DIR 	"download-api/"	/* relative path for download-api */
+#define API_DL_DIR	API_DIR "downloads/"	/* relative path for download files */
+#define API_CTX_DIR	API_DIR "contexts/"	/* relative path for session contexts */
+#define API_DIR_MAX	23	/*  max length of download-api directory */
+
+extern int is_file(const char *filepath);
 #endif
