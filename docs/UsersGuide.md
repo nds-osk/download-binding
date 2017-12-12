@@ -58,12 +58,12 @@ This binding:
 - supports SSL.
 
 (The following functions supported only in commercial version.)
-- limits number of downloading in parallel in the system.
-- limits total save size per binder.
+- limits number of downloading in parallel in the system. (This is implemented in the future.)
+- limits total save size per binder. (This is implemented in the future.)
 - manages files retention period per binder.
 - keeps the download information per session, when system rebooted.
 - limits download speed.
-- enables/disables HTTP redirect.
+- enables/disables HTTP redirect. (This is implemented in the future.)
 - decrypts a downloaded file.
 
 ## 2.3. Note
